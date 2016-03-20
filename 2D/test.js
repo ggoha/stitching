@@ -1,8 +1,8 @@
 var scena = {};
-scena.H = 600;
 scena.camerasId = 0; scena.linesId = 0; scena.pointsId = 0;
-var MAXX = window.innerWidth, MAXY = window.innerHeight;
-var matching = [];
+var MAXX = window.innerWidth, MAXY = window.innerHeight; VALIDY = 700;
+scena.H = VALIDY;
+var matching = [], points = [];
 var textureLine = [], texturePoint= [];
 textureLine.push(PIXI.Texture.fromImage('2D/line0.png'));
 textureLine.push(PIXI.Texture.fromImage('2D/line1.png'));
@@ -22,7 +22,7 @@ scena.addCamera = function ()
 
     var camera = new PIXI.Graphics();
     camera.position.x = Math.floor(Math.random() * MAXX);
-    camera.position.y = Math.floor(Math.random() * MAXY);
+    camera.position.y = Math.floor(Math.random() * VALIDY);
 
     camera.beginFill(0x000000);
      
@@ -53,6 +53,8 @@ scena.addCamera = function ()
         // events for drag move
         .on('mousemove', onDragMove);
 
+    camera.isMatching = false;
+    camera.autoRender = true;
 
     // add it the stage so we see it on our screens..
     cameraContainer.addChild(camera);
@@ -60,9 +62,11 @@ scena.addCamera = function ()
     var projection = new PIXI.Container();
     cameraContainer.addChild(projection);
 
+    var match = new PIXI.Container();
+    cameraContainer.addChild(match);
+
     cameraContainer.project = function ()
     {
-        console.log(this);
         //меняем порядок слоев, для их правильного отображения на на проекции
         for (x in lines.children)
             for (y in lines.children)
@@ -92,32 +96,35 @@ scena.addCamera = function ()
     }   
 
     //меню
-    var displacementFolder = gui.addFolder('camera'+scena.camerasId);
+    var displacementFolder = displacementFolderCamera.addFolder('camera'+scena.camerasId);
     cameraContainer.myId = scena.camerasId;
     scena.camerasId += 1;
     displacementFolder.add(camera, 'rotation', 0, 2*Math.PI).name("angle");
     displacementFolder.add(cameraContainer, 'project').name("project");
+    displacementFolder.add(camera, 'isMatching').name("use for match"); 
+    displacementFolder.add(camera, 'autoRender').name("use for auto render");    
     displacementFolder.add(camera, 'destroy').name("destroy");
+
 }
 
 scena.addLayer = function ()
 {
     var x = Math.floor(Math.random() * MAXX);
-    var y = Math.floor(Math.random() * MAXY);
-    // create our little bunny friend..
-    var bunny = new PIXI.Sprite(textureLine[Math.floor(Math.random() * textureLine.length)]);
+    var y = Math.floor(Math.random() * VALIDY);
 
-    // enable the bunny to be interactive... this will allow it to respond to mouse and touch events
-    bunny.interactive = true;
+    var layer = new PIXI.Sprite(textureLine[Math.floor(Math.random() * textureLine.length)]);
 
-    // this button mode will mean the hand cursor appears when you roll over the bunny with your mouse
-    bunny.buttonMode = true;
+    // enable the layer to be interactive... this will allow it to respond to mouse and touch events
+    layer.interactive = true;
 
-    // center the bunny's anchor point
-    bunny.anchor.set(0);
+    // this button mode will mean the hand cursor appears when you roll over the layer with your mouse
+    layer.buttonMode = true;
+
+    // center the layer's anchor point
+    layer.anchor.set(0);
 
     // setup events
-    bunny
+    layer
         // events for drag start
         .on('mousedown', onDragStart)
         .on('touchstart', onDragStart)
@@ -131,39 +138,41 @@ scena.addLayer = function ()
         .on('touchmove', onDragMove);
 
     // move the sprite to its designated position
-    bunny.position.x = x;
-    bunny.position.y = y;
+    layer.position.x = x;
+    layer.position.y = y;
+
+    layer.isPoint = false;
 
     //меню
-    var displacementFolder = gui.addFolder('line#'+scena.linesId);
+    var displacementFolder = displacementFolderLayer.addFolder('line#'+scena.linesId);
     scena.linesId += 1;
-    displacementFolder.add(bunny, 'width', 4, MAXX).name("width");
-    displacementFolder.add(bunny, 'destroy').name("destroy");
+    displacementFolder.add(layer, 'width', 4, MAXX).name("width");
+    displacementFolder.add(layer, 'destroy').name("destroy");
 
     // add it to the stage
-    lines.addChild(bunny);
+    lines.addChild(layer);
 }
 
 scena.addPoint = function ()
 {
     var x = Math.floor(Math.random() * MAXX)
-    var y = Math.floor(Math.random() * MAXY);
-    // create our little bunny friend..
-    var bunny = new PIXI.Sprite(texturePoint[Math.floor(Math.random() * texturePoint.length)]);
+    var y = Math.floor(Math.random() * VALIDY);
 
-    // enable the bunny to be interactive... this will allow it to respond to mouse and touch events
-    bunny.interactive = true;
+    var point = new PIXI.Sprite(texturePoint[Math.floor(Math.random() * texturePoint.length)]);
 
-    // this button mode will mean the hand cursor appears when you roll over the bunny with your mouse
-    bunny.buttonMode = true;
+    // enable the point to be interactive... this will allow it to respond to mouse and touch events
+    point.interactive = true;
 
-    // center the bunny's anchor point
-    bunny.anchor.set(0);
+    // this button mode will mean the hand cursor appears when you roll over the point with your mouse
+    point.buttonMode = true;
 
-    bunny.scale.set(3);
+    // center the point's anchor point
+    point.anchor.set(0);
+
+    point.scale.set(3);
 
     // setup events
-    bunny
+    point
         // events for drag start
         .on('mousedown', onDragStart)
         .on('touchstart', onDragStart)
@@ -176,21 +185,112 @@ scena.addPoint = function ()
         .on('mousemove', onDragMove)
         .on('touchmove', onDragMove);
 
-    var displacementFolder = gui.addFolder('Point#'+scena.pointsId);
-    scena.pointsId += 1;
     // move the sprite to its designated position
-    bunny.position.x = x;
-    bunny.position.y = y;
+    point.position.x = x;
+    point.position.y = y;
 
+    point.isMatching = false;
+    point.isPoint = true;
+
+    displacementFolderPoint.add(point, 'isMatching').name('point#'+scena.pointsId);
+    scena.pointsId += 1; 
+  
     // add it to the stage
-    lines.addChild(bunny);
+    lines.addChild(point);
+}
+
+scena.match = function ()
+{
+    for (i in cameras.children)
+    {
+        cameras.children[i].children[2].removeChildren();
+    }
+
+    var matchPoints = [], matchCamera = [];
+
+    for (i in lines.children)
+    {
+        if (lines.children[i].isMatching)
+            matchPoints.push(lines.children[i]);
+    }
+    for (i in cameras.children)
+    {
+        if (cameras.children[i].children[0].isMatching)
+            matchCamera.push(cameras.children[i]);
+    }
+    if (matchPoints.length != 2) {
+        alert("Need 2 keyPoint");
+    }
+    if (matchPoints.length != 2) {
+        alert("Need 2 camera");
+    }    
+    var x1 = matchPoints[0].position.x, y1 = matchPoints[0].position.y;
+    var x2 = matchPoints[1].position.x, y2 = matchPoints[1].position.y;       
+    var xK1 = matchCamera[0].children[0].position.x, yK1 = matchCamera[0].children[0].position.y;
+    var xK2 = matchCamera[1].children[0].position.x, yK2 = matchCamera[1].children[0].position.y;
+
+    var x1K1 = (scena.H*(xK1-x1)-xK1*y1+x1*yK1)/(yK1-y1);
+    var x1K2 = (scena.H*(xK2-x1)-xK2*y1+x1*yK2)/(yK2-y1);
+
+    var x2K1 = (scena.H*(xK1-x2)-xK1*y2+x2*yK1)/(yK1-y2);
+    var x2K2 = (scena.H*(xK2-x2)-xK2*y2+x2*yK2)/(yK2-y2); 
+    var k = (x2K2-x1K2)/(x2K1-x1K1);
+    var b = x2K2 - x2K1*k;                    
+
+    console.log(x1K1, x2K1, x1K2, x2K2, k, b);
+
+    for (x in lines.children)
+    {
+        //находим координаты концов слоев и камеры
+        var x1 = lines.children[x].position.x, y1 = lines.children[x].position.y;
+        var x2 = x1+lines.children[x].width, y2 = y1;        
+        var xK = matchCamera[0].children[0].position.x, yK = matchCamera[0].children[0].position.y;
+        if (y1 > yK)
+        {
+            //копируем текстуру оригинала
+            var copy_texture = lines.children[x]._texture.clone();
+
+            var projection = new PIXI.Sprite(copy_texture);
+
+            projection.position.x = k*((scena.H*(xK-x1)-xK*y1+x1*yK)/(yK-y1))+b;
+            projection.position.y = scena.H+50;
+            console.log(projection.position.x);
+            projection.width = k*((scena.H*(xK-x2)-xK*y2+x2*yK)/(yK-y2))+b-projection.position.x;
+            matchCamera[0].children[2].addChild(projection);
+
+        }          
+    } 
+    for (x in lines.children)
+    {
+        //находим координаты концов слоев и камеры
+        var x1 = lines.children[x].position.x, y1 = lines.children[x].position.y;
+        var x2 = x1+lines.children[x].width, y2 = y1;        
+        var xK = matchCamera[1].children[0].position.x, yK = matchCamera[1].children[0].position.y;
+        if (y1 > yK)
+        {
+            //копируем текстуру оригинала
+            var copy_texture = lines.children[x]._texture.clone();
+
+            var projection = new PIXI.Sprite(copy_texture);
+
+            projection.position.x = (scena.H*(xK-x1)-xK*y1+x1*yK)/(yK-y1);
+            projection.position.y = scena.H+60;
+            console.log(projection.position.x);
+            projection.width = (scena.H*(xK-x2)-xK*y2+x2*yK)/(yK-y2) - projection.position.x;
+            matchCamera[1].children[2].addChild(projection);
+        }          
+    }    
 }
 
 var gui = new dat.GUI({});
-gui.add(scena, 'addCamera'); 
-gui.add(scena, 'addLayer'); 
-gui.add(scena, 'addPoint'); 
-gui.add(scena, 'H', 0, MAXY); 
+var displacementFolderCamera = gui.addFolder('Cameras');
+displacementFolderCamera.add(scena, 'addCamera').name("add camera"); 
+var displacementFolderLayer = gui.addFolder('Layers');
+displacementFolderLayer.add(scena, 'addLayer').name("add layer"); 
+var displacementFolderPoint = gui.addFolder('Points');
+displacementFolderPoint.add(scena, 'addPoint').name("add point"); 
+gui.add(scena, 'match'); 
+gui.add(scena, 'H', 0, VALIDY); 
 
 var renderer = PIXI.autoDetectRenderer(window.innerWidth, window.innerHeight, {backgroundColor : 0xFFFFFF});
 document.body.appendChild(renderer.view);
@@ -206,12 +306,20 @@ stage.addChild(cameras);
 
 scena.addLayer(); scena.addLayer();
 
-scena.addCamera();
+scena.addCamera(); scena.addCamera();
+
+scena.addPoint(); scena.addPoint();
 
 requestAnimationFrame( animate );
 
 function animate() {
-
+    for (i in cameras.children)
+    {
+        if (cameras.children[i].children[0].autoRender)
+        {
+            cameras.children[i].project();
+        }
+    }
     requestAnimationFrame(animate);
 
     // cameras[0].rotation += 0.1;
@@ -248,5 +356,9 @@ function onDragMove(mouseData)
         var newPosition = this.data.getLocalPosition(this.parent);
         this.position.x += mouseData.data.originalEvent.movementX;
         this.position.y += mouseData.data.originalEvent.movementY;
+        if (this.position.y > VALIDY)
+        {
+            this.position.y = VALIDY;
+        }
     }
 }
