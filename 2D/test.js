@@ -1,10 +1,19 @@
 var scena = {};
 scena.H = 600;
-scena.camerasId = 0;
-scena.linesId = 0;
+scena.camerasId = 0; scena.linesId = 0; scena.pointsId = 0;
 var MAXX = window.innerWidth, MAXY = window.innerHeight;
-var textureLine = PIXI.Texture.fromImage('2D/line.png');
-var texturePoint = PIXI.Texture.fromImage('2D/point.png');
+var matching = [];
+var textureLine = [], texturePoint= [];
+textureLine.push(PIXI.Texture.fromImage('2D/line0.png'));
+textureLine.push(PIXI.Texture.fromImage('2D/line1.png'));
+textureLine.push(PIXI.Texture.fromImage('2D/line2.png'));
+textureLine.push(PIXI.Texture.fromImage('2D/line3.png'));
+textureLine.push(PIXI.Texture.fromImage('2D/line4.png'));
+texturePoint.push(PIXI.Texture.fromImage('2D/point0.png'));
+texturePoint.push(PIXI.Texture.fromImage('2D/point1.png'));
+texturePoint.push(PIXI.Texture.fromImage('2D/point2.png'));
+texturePoint.push(PIXI.Texture.fromImage('2D/point3.png'));
+texturePoint.push(PIXI.Texture.fromImage('2D/point4.png'));
 
 scena.addCamera = function ()
 {
@@ -82,7 +91,6 @@ scena.addCamera = function ()
         } 
     }   
 
-    
     //меню
     var displacementFolder = gui.addFolder('camera'+scena.camerasId);
     cameraContainer.myId = scena.camerasId;
@@ -94,11 +102,10 @@ scena.addCamera = function ()
 
 scena.addLayer = function ()
 {
-
-    var x = Math.floor(Math.random() * MAXX)
+    var x = Math.floor(Math.random() * MAXX);
     var y = Math.floor(Math.random() * MAXY);
     // create our little bunny friend..
-    var bunny = new PIXI.Sprite(textureLine);
+    var bunny = new PIXI.Sprite(textureLine[Math.floor(Math.random() * textureLine.length)]);
 
     // enable the bunny to be interactive... this will allow it to respond to mouse and touch events
     bunny.interactive = true;
@@ -127,12 +134,11 @@ scena.addLayer = function ()
     bunny.position.x = x;
     bunny.position.y = y;
 
-    //мен
+    //меню
     var displacementFolder = gui.addFolder('line#'+scena.linesId);
     scena.linesId += 1;
     displacementFolder.add(bunny, 'width', 4, MAXX).name("width");
     displacementFolder.add(bunny, 'destroy').name("destroy");
-
 
     // add it to the stage
     lines.addChild(bunny);
@@ -140,11 +146,10 @@ scena.addLayer = function ()
 
 scena.addPoint = function ()
 {
-
     var x = Math.floor(Math.random() * MAXX)
     var y = Math.floor(Math.random() * MAXY);
     // create our little bunny friend..
-    var bunny = new PIXI.Sprite(texturePoint);
+    var bunny = new PIXI.Sprite(texturePoint[Math.floor(Math.random() * texturePoint.length)]);
 
     // enable the bunny to be interactive... this will allow it to respond to mouse and touch events
     bunny.interactive = true;
@@ -154,6 +159,8 @@ scena.addPoint = function ()
 
     // center the bunny's anchor point
     bunny.anchor.set(0);
+
+    bunny.scale.set(3);
 
     // setup events
     bunny
@@ -169,6 +176,8 @@ scena.addPoint = function ()
         .on('mousemove', onDragMove)
         .on('touchmove', onDragMove);
 
+    var displacementFolder = gui.addFolder('Point#'+scena.pointsId);
+    scena.pointsId += 1;
     // move the sprite to its designated position
     bunny.position.x = x;
     bunny.position.y = y;
@@ -182,7 +191,6 @@ gui.add(scena, 'addCamera');
 gui.add(scena, 'addLayer'); 
 gui.add(scena, 'addPoint'); 
 gui.add(scena, 'H', 0, MAXY); 
-
 
 var renderer = PIXI.autoDetectRenderer(window.innerWidth, window.innerHeight, {backgroundColor : 0xFFFFFF});
 document.body.appendChild(renderer.view);
