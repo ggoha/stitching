@@ -9,11 +9,23 @@ textureLine.push(PIXI.Texture.fromImage('2D/line1.png'));
 textureLine.push(PIXI.Texture.fromImage('2D/line2.png'));
 textureLine.push(PIXI.Texture.fromImage('2D/line3.png'));
 textureLine.push(PIXI.Texture.fromImage('2D/line4.png'));
+textureLine.push(PIXI.Texture.fromImage('2D/line5.png'));
+textureLine.push(PIXI.Texture.fromImage('2D/line6.png'));
+textureLine.push(PIXI.Texture.fromImage('2D/line7.png'));
 texturePoint.push(PIXI.Texture.fromImage('2D/point0.png'));
 texturePoint.push(PIXI.Texture.fromImage('2D/point1.png'));
 texturePoint.push(PIXI.Texture.fromImage('2D/point2.png'));
 texturePoint.push(PIXI.Texture.fromImage('2D/point3.png'));
 texturePoint.push(PIXI.Texture.fromImage('2D/point4.png'));
+
+function findCrossing(x1, y1, x2, y2, X1, Y1, X2, Y2) 
+{   
+    var k1 = (y2-y1)/(x2-x1);
+    var b1 = y1-k1*x1;
+    var k2 = (Y2-Y1)/(X2-X1);
+    var b2 = Y1-k2*X1;    
+    return [(b2-b1)/(k1-k2), k1*x+b1];
+}
 
 scena.addCamera = function ()
 {
@@ -41,7 +53,7 @@ scena.addCamera = function ()
     camera.buttonMode = true;  
 
     // make it a bit bigger, so it's easier to grab
-    camera.scale.set(3);
+    camera.scale.set(1);
 
     // setup events
     camera
@@ -67,6 +79,18 @@ scena.addCamera = function ()
 
     cameraContainer.project = function ()
     {
+        var xK = this.children[0].position.x, yK = this.children[0].position.y;  
+        //нахоим кооринаты краев матрицы 
+        var xM1 = -30, yM1 = -30, xM2 = 30, yM2 = -30;
+        var xM1N = xM1* Math.cos(camera.rotation) - yM1 * Math.sin(camera.rotation)+xK;
+        var yM1N = xM1* Math.sin(camera.rotation) + yM1 * Math.cos(camera.rotation)+yK;
+        var xM2N = xM2* Math.cos(camera.rotation) - yM2 * Math.sin(camera.rotation)+xK;
+        var yM2N = xM2* Math.sin(camera.rotation) + yM2 * Math.cos(camera.rotation)+yK;
+
+        //нахоим границы прекции
+        var xM1NP = (scena.H*(xK-xM1N)-xK*yM1N+xM1N*yK)/(yK-yM1N);
+        var xM2NP = (scena.H*(xK-xM2N)-xK*yM2N+xM2N*yK)/(yK-yM2N);
+
         //меняем порядок слоев, для их правильного отображения на на проекции
         for (x in lines.children)
             for (y in lines.children)
@@ -79,20 +103,72 @@ scena.addCamera = function ()
             //находим координаты концов слоев и камеры
             var x1 = lines.children[x].position.x, y1 = lines.children[x].position.y;
             var x2 = x1+lines.children[x].width, y2 = y1;        
-            var xK = this.children[0].position.x, yK = this.children[0].position.y;
             if (y1 > yK)
             {
-                //копируем текстуру оригинала
-                var copy_texture = lines.children[x]._texture.clone();
+                if (lines.children[x].isPoint)
+                {
+                    //копируем текстуру оригинала
+                    var copy_texture = lines.children[x]._texture.clone();
 
-                var projection = new PIXI.Sprite(copy_texture);
+                    var projection = new PIXI.Sprite(copy_texture);
 
-                projection.position.x = (scena.H*(xK-x1)-xK*y1+x1*yK)/(yK-y1);
-                projection.position.y = scena.H+this.myId*10;
-                projection.width = (scena.H*(xK-x2)-xK*y2+x2*yK)/(yK-y2) - projection.position.x
-                this.children[1].addChild(projection);
+                    projection.position.x = (scena.H*(xK-x1)-xK*y1+x1*yK)/(yK-y1);
+                    projection.position.y = scena.H+this.myId*10;
+                    projection.width = (scena.H*(xK-x2)-xK*y2+x2*yK)/(yK-y2) - projection.position.x
+                    this.children[1].addChild(projection);
+
+                    if (projection.position.x <= Math.max(xM1NP, xM2NP) && projection.position.x >= Math.min(xM1NP, xM2NP))
+                    {
+                        var graphics = new PIXI.Graphics();
+                        switch (lines.children[x].myColor)
+                        {
+                            case 0: graphics.lineStyle(1, 0x000000, 10); break
+                            case 1: graphics.lineStyle(1, 0x0000ff, 10); break
+                            case 2: graphics.lineStyle(1, 0xff0000, 10); break
+                            case 3: graphics.lineStyle(1, 0x00ff00, 10); break
+                            case 4: graphics.lineStyle(1, 0xffff00, 10); break
+                        }
+
+                        var t = findCrossing(xM1N, yM1N, xM2N, yM2N, xK, yK, projection.position.x+projection.width/2, scena.H);
+
+                        // рисуем оптическу лини
+                        graphics.moveTo(t[0], t[1]);
+                        graphics.lineTo(projection.position.x+projection.width/2, scena.H);
+                        this.children[1].addChild(graphics);                        
+                    }
+                }
+                else
+                {
+                    //копируем текстуру оригинала
+                    var copy_texture = lines.children[x]._texture.clone();
+
+                    var projection = new PIXI.Sprite(copy_texture);
+
+                    projection.position.x = (scena.H*(xK-x1)-xK*y1+x1*yK)/(yK-y1);
+                    projection.position.y = scena.H+this.myId*10;
+                    projection.width = (scena.H*(xK-x2)-xK*y2+x2*yK)/(yK-y2) - projection.position.x
+                    this.children[1].addChild(projection);
+                }
             }          
         } 
+        var graphics = new PIXI.Graphics();
+        graphics.lineStyle(1, 0xAEAEAE, 1);
+
+        // рисуем отпическу лини
+        graphics.moveTo(xM1N, yM1N);
+        graphics.lineTo(xM1NP, scena.H);
+
+        graphics.moveTo(xM2N, yM2N);
+        graphics.lineTo(xM2NP, scena.H);
+
+        //акрашиваем невошешее в кадр 
+        graphics.lineStyle(1, 0xFFFFFF, 1);
+        graphics.beginFill(0xFFFFFF, 1);
+        graphics.drawRect(Math.max(xM1NP, xM2NP) , scena.H+this.myId*10, MAXX, 4);
+        graphics.drawRect(0, scena.H+this.myId*10, Math.min(xM1NP, xM2NP), 4);
+
+        this.children[1].addChild(graphics);                
+
     }   
 
     //меню
@@ -158,7 +234,8 @@ scena.addPoint = function ()
     var x = Math.floor(Math.random() * MAXX)
     var y = Math.floor(Math.random() * VALIDY);
 
-    var point = new PIXI.Sprite(texturePoint[Math.floor(Math.random() * texturePoint.length)]);
+    var random = Math.floor(Math.random() * texturePoint.length);
+    var point = new PIXI.Sprite(texturePoint[random]);
 
     // enable the point to be interactive... this will allow it to respond to mouse and touch events
     point.interactive = true;
@@ -191,6 +268,7 @@ scena.addPoint = function ()
 
     point.isMatching = false;
     point.isPoint = true;
+    point.myColor = random;
 
     displacementFolderPoint.add(point, 'isMatching').name('point#'+scena.pointsId);
     scena.pointsId += 1; 
