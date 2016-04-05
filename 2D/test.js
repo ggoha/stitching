@@ -24,7 +24,7 @@ function findCrossing(x1, y1, x2, y2, X1, Y1, X2, Y2)
     var b1 = y1-k1*x1;
     var k2 = (Y2-Y1)/(X2-X1);
     var b2 = Y1-k2*X1;    
-    return [(b2-b1)/(k1-k2), k1*x+b1];
+    return [(b2-b1)/(k1-k2), k1*(b2-b1)/(k1-k2)+b1];
 }
 
 scena.addCamera = function ()
@@ -87,6 +87,8 @@ scena.addCamera = function ()
         var xM2N = xM2* Math.cos(camera.rotation) - yM2 * Math.sin(camera.rotation)+xK;
         var yM2N = xM2* Math.sin(camera.rotation) + yM2 * Math.cos(camera.rotation)+yK;
 
+        console.log(xM1N, yM1N, xM2N, yM2N);
+
         //нахоим границы прекции
         var xM1NP = (scena.H*(xK-xM1N)-xK*yM1N+xM1N*yK)/(yK-yM1N);
         var xM2NP = (scena.H*(xK-xM2N)-xK*yM2N+xM2N*yK)/(yK-yM2N);
@@ -131,10 +133,27 @@ scena.addCamera = function ()
 
                         var t = findCrossing(xM1N, yM1N, xM2N, yM2N, xK, yK, projection.position.x+projection.width/2, scena.H);
 
+                        graphics.beginFill(0xFFFF0B, 0.5);
+                        graphics.drawCircle(xM1N, yM1N, 3);
+                        graphics.endFill(); 
+
+                        graphics.beginFill(0xFFFF0B, 0.5);
+                        graphics.drawCircle(xM2N, yM2N, 3);
+                        graphics.endFill(); 
+
+                        graphics.beginFill(0xFFFF0B, 0.5);
+                        graphics.drawCircle(xK, yK, 3);
+                        graphics.endFill(); 
+
+                        graphics.beginFill(0xFFFF0B, 0.5);
+                        graphics.drawCircle(projection.position.x+projection.width/2, scena.H, 3);
+                        graphics.endFill();                         
+
                         // рисуем оптическу лини
                         graphics.moveTo(t[0], t[1]);
                         graphics.lineTo(projection.position.x+projection.width/2, scena.H);
-                        this.children[1].addChild(graphics);                        
+                        this.children[1].addChild(graphics);  
+
                     }
                 }
                 else
