@@ -18,6 +18,44 @@ texturePoint.push(PIXI.Texture.fromImage('2D/point2.png'));
 texturePoint.push(PIXI.Texture.fromImage('2D/point3.png'));
 texturePoint.push(PIXI.Texture.fromImage('2D/point4.png'));
 
+
+function paintScene() 
+{   
+    ortho.removeChildren()
+    for (x in lines.children)
+    {
+        var copy_texture = lines.children[x]._texture.clone();
+        var projection = new PIXI.Sprite(copy_texture);
+        projection.position.x = lines.children[x].position.x;
+        projection.position.y = 800;
+        projection.width =  lines.children[x].width
+        ortho.addChild(projection);
+    }
+    var graphics = new PIXI.Graphics();
+    graphics.lineStyle(1, 0xAEAEAE, 1);    
+    //рисуем сцену
+    graphics.moveTo(0, scena.H);
+    graphics.lineTo(MAXX, scena.H);
+
+    ortho.addChild(graphics);
+
+    var style = {
+        font : 'italic 10px Arial'
+    };
+
+    var richText = new PIXI.Text('Scena',style);
+    richText.x = 0;
+    richText.y = scena.H;
+
+    ortho.addChild(richText);
+
+    var richText = new PIXI.Text('ortho',style);
+    richText.x = 0;
+    richText.y = 780;
+    ortho.addChild(richText);    
+
+}
+
 function findCrossing(x1, y1, x2, y2, X1, Y1, X2, Y2) 
 {   
     var k1 = (y2-y1)/(x2-x1);
@@ -87,11 +125,11 @@ scena.addCamera = function ()
         var xM2N = xM2* Math.cos(camera.rotation) - yM2 * Math.sin(camera.rotation)+xK;
         var yM2N = xM2* Math.sin(camera.rotation) + yM2 * Math.cos(camera.rotation)+yK;
 
-        console.log(xM1N, yM1N, xM2N, yM2N);
-
         //нахоим границы прекции
         var xM1NP = (scena.H*(xK-xM1N)-xK*yM1N+xM1N*yK)/(yK-yM1N);
         var xM2NP = (scena.H*(xK-xM2N)-xK*yM2N+xM2N*yK)/(yK-yM2N);
+        var k = Math.sin(camera.rotation)+Math.cos(camera.rotation);
+        var b = xM2NP*(1-k);
 
         //меняем порядок слоев, для их правильного отображения на на проекции
         for (x in lines.children)
@@ -115,7 +153,7 @@ scena.addCamera = function ()
                     var projection = new PIXI.Sprite(copy_texture);
 
                     projection.position.x = (scena.H*(xK-x1)-xK*y1+x1*yK)/(yK-y1);
-                    projection.position.y = scena.H+this.myId*10;
+                    projection.position.y = scena.H+this.myId*30;
                     projection.width = (scena.H*(xK-x2)-xK*y2+x2*yK)/(yK-y2) - projection.position.x
                     this.children[1].addChild(projection);
 
@@ -154,6 +192,11 @@ scena.addCamera = function ()
                         graphics.lineTo(projection.position.x+projection.width/2, scena.H);
                         this.children[1].addChild(graphics);  
 
+                    projection.position.x = k*(scena.H*(xK-x1)-xK*y1+x1*yK)/(yK-y1)+b;
+                    projection.position.y = scena.H+5+this.myId*30;
+                    projection.width = k*(scena.H*(xK-x2)-xK*y2+x2*yK)/(yK-y2)+b - projection.position.x
+                    this.children[1].addChild(projection);
+
                     }
                 }
                 else
@@ -163,9 +206,10 @@ scena.addCamera = function ()
 
                     var projection = new PIXI.Sprite(copy_texture);
 
-                    projection.position.x = (scena.H*(xK-x1)-xK*y1+x1*yK)/(yK-y1);
-                    projection.position.y = scena.H+this.myId*10;
-                    projection.width = (scena.H*(xK-x2)-xK*y2+x2*yK)/(yK-y2) - projection.position.x
+                    projection.position.x = k*(scena.H*(xK-x1)-xK*y1+x1*yK)/(yK-y1)+b;
+                    projection.position.y = scena.H+this.myId*0;
+                    projection.width = k*(scena.H*(xK-x2)-xK*y2+x2*yK)/(yK-y2)+b - projection.position.x
+
                     this.children[1].addChild(projection);
                 }
             }          
@@ -183,12 +227,148 @@ scena.addCamera = function ()
         //акрашиваем невошешее в кадр 
         graphics.lineStyle(1, 0xFFFFFF, 1);
         graphics.beginFill(0xFFFFFF, 1);
-        graphics.drawRect(Math.max(xM1NP, xM2NP) , scena.H+this.myId*10, MAXX, 4);
-        graphics.drawRect(0, scena.H+this.myId*10, Math.min(xM1NP, xM2NP), 4);
+        graphics.drawRect(Math.max(k*xM1NP+b, k*xM2NP+b) , scena.H+this.myId*10, MAXX, 4);
+        graphics.drawRect(0, scena.H+5+this.myId*10, Math.min(k*xM1NP+b, k*xM2NP+b), 4);
 
         this.children[1].addChild(graphics);                
 
     }   
+
+    cameraContainer.project2 = function ()
+    {
+        var xK = this.children[0].position.x, yK = this.children[0].position.y;  
+        //нахоим кооринаты краев матрицы 
+        var xM1 = -30, yM1 = -30, xM2 = 30, yM2 = -30;
+        var xM1N = xM1 * Math.cos(camera.rotation) - yM1 * Math.sin(camera.rotation)+xK;
+        var yM1N = xM1 * Math.sin(camera.rotation) + yM1 * Math.cos(camera.rotation)+yK;
+        var xM2N = xM2 * Math.cos(camera.rotation) - yM2 * Math.sin(camera.rotation)+xK;
+        var yM2N = xM2 * Math.sin(camera.rotation) + yM2 * Math.cos(camera.rotation)+yK;
+
+        //нахоим границы прекции
+        var xM1NP = (scena.H*(xK-xM1N)-xK*yM1N+xM1N*yK)/(yK-yM1N);
+        var xM2NP = (scena.H*(xK-xM2N)-xK*yM2N+xM2N*yK)/(yK-yM2N);
+
+        //находдим граниы проекции на параллельную матрие
+        var pm = findCrossing(xM1N, yM1N, xK, yK, xM2NP, scena.H, xM2NP+100*Math.cos(camera.rotation), scena.H+100* Math.sin(camera.rotation));           
+
+        //меняем порядок слоев, для их правильного отображения на на проекции
+        for (x in lines.children)
+            for (y in lines.children)
+                if (x > y && lines.children[x].y > lines.children[y].y)
+                    lines.swapChildren(lines.children[x], lines.children[y]);
+        //очищаем будущую проекцию
+        this.children[1].removeChildren()
+        for (x in lines.children)
+        {
+            //находим координаты концов слоев и камеры
+            var x1 = lines.children[x].position.x, y1 = lines.children[x].position.y;
+            var x2 = x1+lines.children[x].width, y2 = y1;        
+            if (y1 > yK)
+            {
+                    //копируем текстуру оригинала
+                    var copy_texture = lines.children[x]._texture.clone();
+
+                    var projection = new PIXI.Sprite(copy_texture);
+
+                    //находим пересечение с матрицей
+                    var t1 = findCrossing(xM1N, yM1N, xM2N, yM2N, xK, yK, x1, y1);
+                    var t2 = findCrossing(xM1N, yM1N, xM2N, yM2N, xK, yK, x2, y2);
+
+                    //находим пересечение с проекией матрицей
+                    var t3 = findCrossing(xM2NP, scena.H, pm[0], pm[1], xK, yK, x1, y1);
+                    var t4 = findCrossing(xM2NP, scena.H, pm[0], pm[1], xK, yK ,x2, y2);
+
+                    if (xM2NP < t3[0])
+                    {
+                        projection.position.x = xM2NP+ Math.sqrt( (xM2NP-t3[0])*(xM2NP-t3[0])+(scena.H-t3[1])*(scena.H-t3[1]) );
+                    }
+                    else
+                    {
+                        projection.position.x = xM2NP- Math.sqrt( (xM2NP-t3[0])*(xM2NP-t3[0])+(scena.H-t3[1])*(scena.H-t3[1]) );                        
+                    }
+                    projection.position.y = scena.H+30+this.myId*30;
+                    if (xM2NP < t4[0])
+                    {
+                        projection.width = xM2NP - projection.position.x + Math.sqrt( (xM2NP-t4[0])*(xM2NP-t4[0])+(scena.H-t4[1])*(scena.H-t4[1]) ) ;
+                    }
+                    else
+                    {
+                        projection.width = xM2NP - projection.position.x - Math.sqrt( (xM2NP-t4[0])*(xM2NP-t4[0])+(scena.H-t4[1])*(scena.H-t4[1]) ) ;
+
+                    }
+                    this.children[1].addChild(projection);
+
+                    var style = {
+                        font : 'italic 10px Arial',
+                    };
+
+                    var richText = new PIXI.Text('Camera'+this.myId, style);
+                    richText.x = 0;
+                    richText.y = scena.H+15+this.myId*30;
+
+                    this.children[1].addChild(richText);
+
+                    var graphics = new PIXI.Graphics();
+
+                    // рисуем оптическу лини
+                    if (lines.children[x].isPoint)
+                    {
+                        if (((t1[0]+t2[0])/2>Math.min(xM1N, xM2N)) && ((t1[0]+t2[0])/2<Math.max(xM1N, xM2N)) )
+                        {
+                            switch (lines.children[x].myColor)
+                            {
+                                case 0: graphics.lineStyle(1, 0x000000, 10); break
+                                case 1: graphics.lineStyle(1, 0x0000ff, 10); break
+                                case 2: graphics.lineStyle(1, 0xff0000, 10); break
+                                case 3: graphics.lineStyle(1, 0x00ff00, 10); break
+                                case 4: graphics.lineStyle(1, 0xffff00, 10); break
+                                default: graphics.lineStyle(1, 0xffff00, 10); 
+                            }                            
+                            graphics.moveTo((t1[0]+t2[0])/2, (t1[1]+t2[1])/2);
+
+                            graphics.lineTo((x1+x2)/2, (y1+y2)/2);
+                        }
+                    }
+                    else
+                    {
+                        // if ((t1[0]>Math.min(xM1N, xM2N)) && (t1[0]<Math.max(xM1N, xM2N)) || (t2[0]>Math.min(xM1N, xM2N)) && (t2[0]<Math.max(xM1N, xM2N)))
+                        //     {
+                        //         graphics.lineStyle(1, lines.children[x].color1, 10);
+                        //         graphics.moveTo(t1[0], t1[1]);
+                        //         graphics.lineTo(x1, y1);
+
+                        //         graphics.lineStyle(1, lines.children[x].color2, 10);
+                        //         graphics.moveTo(t2[0], t2[1]);
+                        //         graphics.lineTo(x2, y2);
+                        //     }
+                    }
+                    this.children[1].addChild(graphics);  
+            }          
+        } 
+        var graphics = new PIXI.Graphics();
+        graphics.lineStyle(1, 0xAEAEAE, 1);
+
+        // рисуем отпическу лини
+        graphics.moveTo(xM1N, yM1N);    
+        graphics.lineTo(xM1NP, scena.H);
+
+        graphics.moveTo(xM2N, yM2N);
+        graphics.lineTo(xM2NP, scena.H);
+
+        //рисуем проекцию матрицы
+        // graphics.moveTo(xM2NP, scena.H);
+        // graphics.lineTo(pm[0], pm[1]);
+
+        //закрашиваем невошедшее в кадр 
+        graphics.lineStyle(1, 0xFFFFFF, 1);
+        graphics.beginFill(0xFFFFFF, 1);
+
+        graphics.drawRect(Math.max(xM2NP+ Math.sqrt( (xM2NP-pm[0])*(xM2NP-pm[0])+(scena.H-pm[1])*(scena.H-pm[1]) ), xM2NP) , scena.H+30+this.myId*30, MAXX, 4);
+        graphics.drawRect(0, scena.H+30+this.myId*30, Math.min(xM2NP+ Math.sqrt( (xM2NP-pm[0])*(xM2NP-pm[0])+(scena.H-pm[1])*(scena.H-pm[1]) ), xM2NP), 4);
+
+        this.children[1].addChild(graphics);   
+
+    } 
 
     //меню
     var displacementFolder = displacementFolderCamera.addFolder('camera'+scena.camerasId);
@@ -207,7 +387,8 @@ scena.addLayer = function ()
     var x = Math.floor(Math.random() * MAXX);
     var y = Math.floor(Math.random() * VALIDY);
 
-    var layer = new PIXI.Sprite(textureLine[Math.floor(Math.random() * textureLine.length)]);
+    var random = Math.floor(Math.random() * textureLine.length);
+    var layer = new PIXI.Sprite(textureLine[random]);
 
     // enable the layer to be interactive... this will allow it to respond to mouse and touch events
     layer.interactive = true;
@@ -237,6 +418,17 @@ scena.addLayer = function ()
     layer.position.y = y;
 
     layer.isPoint = false;
+    switch (random)
+    {
+        case 0: layer.color1 = 0xFF0000; layer.color2 = 0xFF0000; break
+        case 1: layer.color1 = 0x000000; layer.color2 = 0x000000; break
+        case 2: layer.color1 = 0x00FF00; layer.color2 = 0x00FF00; break
+        case 3: layer.color1 = 0x0000FF; layer.color2 = 0x0000FF; break
+        case 4: layer.color1 = 0x0000FF; layer.color2 = 0x0000FF; break
+        case 5: layer.color1 = 0xFF0000; layer.color2 = 0xFF0000; break
+        case 6: layer.color1 = 0x000000; layer.color2 = 0x000000; break
+        case 7: layer.color1 = 0x00FF00; layer.color2 = 0x00FF00; break
+    }
 
     //меню
     var displacementFolder = displacementFolderLayer.addFolder('line#'+scena.linesId);
@@ -397,9 +589,11 @@ var stage = new PIXI.Container();
 var projections = new PIXI.Container();
 var lines = new PIXI.Container();
 var cameras = new PIXI.Container();
+var ortho = new PIXI.Container();
 stage.addChild(projections);
 stage.addChild(lines);
 stage.addChild(cameras);
+stage.addChild(ortho);
 
 scena.addLayer(); scena.addLayer();
 
@@ -414,9 +608,10 @@ function animate() {
     {
         if (cameras.children[i].children[0].autoRender)
         {
-            cameras.children[i].project();
+            cameras.children[i].project2();
         }
     }
+    paintScene();
     requestAnimationFrame(animate);
 
     // cameras[0].rotation += 0.1;
